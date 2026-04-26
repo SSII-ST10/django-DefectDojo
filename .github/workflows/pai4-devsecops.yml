@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Descargar el código del repositorio
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Escaneo IaC con Trivy
         uses: aquasecurity/trivy-action@master
@@ -54,7 +54,7 @@ jobs:
         run: docker compose down
 
       - name: Guardar reporte ZAP
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: zap-report
