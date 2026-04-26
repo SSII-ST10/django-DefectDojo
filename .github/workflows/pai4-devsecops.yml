@@ -2,7 +2,7 @@ name: DevSecOps Pipeline PAI4
 
 on:
   push:
-    branches: ["master", "main"] # El repo de DefectDojo usa master
+    branches: ["master", "main"]
 
 jobs:
   # ---------------------------------------------------
@@ -18,8 +18,6 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: "config"
-          # Escaneamos la raíz (.). Trivy detectará automáticamente los
-          # Dockerfile, el docker-compose.yml y la carpeta helm/defectdojo
           scan-ref: "."
           format: "json"
           output: "trivy-iac-report.json"
@@ -42,25 +40,21 @@ jobs:
 
       - name: Levantar la aplicación DefectDojo
         run: |
-          # Usamos el docker-compose.yml que está en la raíz de tu repositorio
-          docker-compose up -d
+          docker compose up -d
           echo "Esperando a que DefectDojo inicie sus servicios..."
-          # DefectDojo levanta bases de datos (PostgreSQL), Redis y Celery.
-          # Le damos 2 minutos (120 seg) para que la web esté totalmente lista.
           sleep 120
 
       - name: Ejecutar OWASP ZAP (Baseline Scan)
         run: |
-          # DefectDojo por defecto expone el puerto 8080 en docker-compose
           docker run --network host -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://localhost:8080 \
             -J zap-dast-report.json || true
 
       - name: Apagar DefectDojo
-        run: docker-compose down
+        run: docker compose down
 
       - name: Guardar reporte ZAP
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: zap-report
