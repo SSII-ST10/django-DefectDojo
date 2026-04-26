@@ -43,9 +43,12 @@ jobs:
           docker compose up -d
           echo "Esperando a que DefectDojo inicie sus servicios..."
           sleep 120
+          curl -sI http://localhost:8080 || echo "Advertencia: El servidor aún no responde."
 
       - name: Ejecutar OWASP ZAP (Baseline Scan)
         run: |
+          chmod 777 .
+
           docker run --network host -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://localhost:8080 \
             -J zap-dast-report.json || true
