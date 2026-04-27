@@ -1,0 +1,53 @@
+name: DevSecOps Pipeline - PAI 4
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  devsecops:
+    runs-on: ubuntu-latest
+
+    env:
+      DEFECTDOJO_URL: ${{ secrets.DEFECTDOJO_URL }}
+      DEFECTDOJO_API_KEY: ${{ secrets.DEFECTDOJO_API_KEY }}
+      DEFECTDOJO_ENGAGEMENT_ID: ${{ secrets.DEFECTDOJO_ENGAGEMENT_ID }}
+      DEFECTDOJO_PRODUCT_NAME: ${{ secrets.DEFECTDOJO_PRODUCT_NAME }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Run SAST + SCA (Kevin)
+        run: ./scripts/run_sast_sca.sh || echo "SAST/SCA step completed with warnings"
+
+      - name: Run DAST + IaC (Adrian)
+        run: ./scripts/run_dast_iac.sh || echo "DAST/IaC step completed with warnings"
+
+      - name: Upload results to DefectDojo
+        run: |
+          chmod +x scripts/send_to_defectdojo.sh
+          for report in reports/*.*; do
+            if [ -f "$report" ]; then
+              scan_type=$(basename "$report" | sed 's/\.[^.]*$//')
+              ./scripts/send_to_defectdojo.sh "$report" "${scan_type} Report"
+            fi
+          done
+
+      - name: Archive reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: reports/

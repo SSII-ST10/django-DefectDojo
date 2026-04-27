@@ -1,0 +1,10 @@
+{
+  "tool": "Test Tool",
+  "findings": [
+    {
+      "title": "Vulnerabilidad de prueba desde Windows",
+      "severity": "High",
+      "description": "Prueba manual"
+    }
+  ]
+}
